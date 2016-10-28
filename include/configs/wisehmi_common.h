@@ -155,7 +155,20 @@
 	 *     mtd2: 16M      (kernel)
 	 *     mtd3: 16M      (dtb)
 	 *     mtd4: left     (rootfs)
-	 *//*modify by wynne at 20161026*/
+	 */
+/*modify by wynne at 20161028*/
+#if 0
+#define CONFIG_EXTRA_ENV_SETTINGS \
+	CONFIG_MFG_ENV_SETTINGS \
+	"fdt_addr=0x18000000\0" \
+	"fdt_high=0xffffffff\0"	  \
+	"bootargs=console=" CONFIG_CONSOLE_DEV ",115200 ubi.mtd=4 "  \
+		"root=ubi0:rootfs rootfstype=ubifs "		     \
+		"mtdparts=gpmi-nand:64m(boot),16m(kernel),16m(dtb),-(rootfs)\0"\
+	"bootcmd=nand read ${loadaddr} 0x4000000 0x800000;"\
+		"nand read ${fdt_addr} 0x5000000 0x100000;"\
+		"bootz ${loadaddr} - ${fdt_addr}\0"
+#else
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS \
 	"fdt_addr=0x18000000\0" \
@@ -163,9 +176,10 @@
 	"bootargs=console=" CONFIG_CONSOLE_DEV ",115200 ubi.mtd=3 "  \
 		"root=ubi0:rootfs rootfstype=ubifs "		     \
 		"mtdparts=gpmi-nand:64m(boot),16m(kernel),16m(dtb),-(rootfs)\0"\
-	"bootcmd=nand read ${loadaddr} 0x4000000 0x800000;"\
-		"nand read ${fdt_addr} 0x5000000 0x100000;"\
+	"bootcmd=nand read ${loadaddr} 0x4000000 0x500000;"\
+		"nand read ${fdt_addr} 0x5000000 0x19000;"\
 		"bootz ${loadaddr} - ${fdt_addr}\0"
+#endif
 
 #elif defined(CONFIG_SYS_BOOT_SATA)
 
