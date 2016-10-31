@@ -284,3 +284,80 @@ void mxc_serial_burn_putCmd(const char *s, int len)
 	}
 }
 
+// add for Encryption IC , config uart3 , by wynne 20160727
+#define UART_ENCRYPT	UART3_BASE
+
+ void mxc_serial_encrypt_setbrg(unsigned int baudrate)
+{
+	u32 clk = imx_get_uartclk();
+
+	if (!baudrate)
+		baudrate = 115200;
+printf("mxc_serial_encrypt_setbrg baudrate=%d, clk=%d\n", baudrate, clk);
+	__REG(UART_ENCRYPT + UFCR) = 4 << 7; /* divide input clock by 2 */
+	__REG(UART_ENCRYPT + UBIR) = 0xf;
+	__REG(UART_ENCRYPT + UBMR) = clk / (2 * baudrate);
+
+}
+
+void mxc_serial_encrypt_putc(const char c)
+{
+	__REG(UART_ENCRYPT + UTXD) = c;
+
+	/* wait for transmitter to be ready */
+	while (!(__REG(UART_ENCRYPT + UTS) & UTS_TXEMPTY))
+		WATCHDOG_RESET();
+}
+
+int mxc_serial_encrypt_init(unsigned int baudrate)
+{
+	__REG(UART_ENCRYPT + UCR1) = 0x0;
+	__REG(UART_ENCRYPT + UCR2) = 0x0;
+
+	while (!(__REG(UART_ENCRYPT + UCR2) & UCR2_SRST));
+
+	__REG(UART_ENCRYPT + UCR3) = 0x0704 | UCR3_ADNIMP;
+	__REG(UART_ENCRYPT + UCR4) = 0x8000;
+	__REG(UART_ENCRYPT + UESC) = 0x002b;
+	__REG(UART_ENCRYPT + UTIM) = 0x0;
+
+	__REG(UART_ENCRYPT + UTS) = 0x0;
+
+	mxc_serial_encrypt_setbrg(baudrate);//(256000);
+
+	__REG(UART_ENCRYPT + UCR2) =  UCR2_IRTS |UCR2_TXEN | UCR2_SRST;//UCR2_WS | UCR2_IRTS | UCR2_RXEN | UCR2_TXEN | UCR2_SRST;
+
+	__REG(UART_ENCRYPT + UCR1) = UCR1_UARTEN;
+
+	return 0;
+}
+
+int mxc_serial_encrypt_RTXEN(int RTX_EN_type)
+{
+	while (!(__REG(UART_ENCRYPT + UCR2) & UCR2_SRST));
+
+	//__REG(UART_ENCRYPT + UCR2) &= ~(UCR2_RXEN | UCR2_TXEN );
+	__REG(UART_ENCRYPT + UCR2) &= ~(UCR2_RXEN);
+	
+	if(RTX_EN_type == 1)
+		__REG(UART_ENCRYPT + UCR2) |= UCR2_RXEN ;
+	else if(RTX_EN_type == 2)
+		__REG(UART_ENCRYPT + UCR2) |= UCR2_TXEN ;
+	//mdelay(1);
+	
+	return 0;
+}
+
+int mxc_serial_encrypt_getc(void)
+{
+	int timeout = 90000;
+	while (__REG(UART_ENCRYPT + UTS) & UTS_RXEMPTY)
+	{
+		if(timeout-- <= 0)
+		{
+			printf("mxc_serial_encrypt_getc timeout !\n");
+			return 0xF1;
+		}
+	}
+	return (__REG(UART_ENCRYPT + URXD) & URXD_RX_DATA); /* mask out status from upper word */
+}

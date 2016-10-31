@@ -200,11 +200,36 @@ static void setup_gpmi_nand(void)
 }
 #endif	//#if defined(CONFIG_NAND_MXS) || (defined(CONFIG_SPL_BUILD)&&defined(CONFIG_SPL_NAND_SUPPORT))
 
+static iomux_v3_cfg_t const uart3_pads[] = {
+	// add for Encryption IC , config uart3 , by wynne 20160727
+	MX6_PAD_EIM_D25__UART3_RX_DATA | MUX_PAD_CTRL(UART_PAD_CTRL),
+	MX6_PAD_EIM_D24__UART3_TX_DATA | MUX_PAD_CTRL(UART_PAD_CTRL),
+};
+
+static iomux_v3_cfg_t const uart3_gpio_pads[] = {
+	// add for Encryption IC , config uart3 , by wynne 20160727
+	//MX6_PAD_EIM_D25__GPIO3_IO25 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_EIM_D24__GPIO3_IO24 | MUX_PAD_CTRL(NO_PAD_CTRL),
+};
+
+void mxc_serial_encrypt_pin(int type)
+{
+	if(!type)
+		imx_iomux_v3_setup_multiple_pads(uart3_pads, ARRAY_SIZE(uart3_pads));
+	else
+	{
+		imx_iomux_v3_setup_multiple_pads(uart3_gpio_pads, ARRAY_SIZE(uart3_gpio_pads));
+		gpio_direction_output(IMX_GPIO_NR(3, 24), 1);
+	}
+	mdelay(1);
+}
+
 int board_early_init_f(void)
 {
 	setup_iomux_uart();
 	return 0;
 }
+
 
 #ifdef CONFIG_SPL_BUILD
 void board_init_f(ulong dummy)
@@ -224,6 +249,12 @@ void board_init_f(ulong dummy)
 
 void spl_board_init(void)
 {
+	uint8_t data[32];
+	uint8_t slot14_key[32] = "r0835ade698e0bcf8506ecda2f7b4f3t";
+	uint8_t slot15_key[32] = "e6049e6ad3bdf898d6650850b98a3d6u";
+	uint8_t slot00_key[]={0x01,0x03,0x23,0x65,0x57,0x39,0x41,0x4f,0x43,0xd5,0x05,0x01,0xd5,0x0f,0xd3,0xc7,0x73,0xd3,0x47,0x69,0x4d,0x87,0xdb,0xf3,0x13,0xb5,0x51,0x09,0x21,0x11,0x31,0x51}; //ok
+	uint8_t num_in[32] = {0};
+
 	get_clocks();
 #ifdef CONFIG_SPL_SERIAL_SUPPORT
 	preloader_console_init();
@@ -243,6 +274,30 @@ void spl_board_init(void)
 #ifdef CONFIG_SPL_NAND_SUPPORT
 	setup_gpmi_nand();
 #endif
+printf("spl_board_init \n");
+	
+	mxc_serial_encrypt_pin(0);
+	sha_204_main();
+	//rand_main(slot15_key);
+	//tempkey_main(slot15_key);
+	//AuthEncryptChip(slot00_key);
+	//atsha204_enc_read(0x0000, data, 0x00, slot00_key, num_in);
+	
+	/*sha204_read(0x00, 0x15, data);
+	sha204_read(0x00, 0x05, data);
+	sha204_read(0x00, 0x0C, data);*/
+	
+	/*memset(data, 0x0, sizeof(data));
+	data[0] = 0xAE;
+	data[1] = 0x8E;
+	data[2] = 0xAF;
+	data[3] = 0x8F;
+	sha204_write(0x00, 0x0C, data);
+	sha204_lock(0x00);
+	
+	sha204_write(0x82, 0x0070, slot14_key);	
+	sha204_write(0x82, 0x0078, slot00_key);
+	sha204_lock(0x01)*/;
 }
 
 int spl_start_uboot(void)
