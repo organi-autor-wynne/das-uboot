@@ -526,6 +526,11 @@ config TARGET_MX6SABRESD
 	bool "Support mx6sabresd"
 	select CPU_V7
 	select SUPPORT_SPL
+	
+config TARGET_SMARTHMI
+	bool "Support smarthmi"
+	select CPU_V7
+	select SUPPORT_SPL
 
 config TARGET_MX6SLEVK
 	bool "Support mx6slevk"
@@ -952,6 +957,7 @@ source "board/xaeniax/Kconfig"
 source "board/xilinx/zynqmp/Kconfig"
 source "board/zipitz2/Kconfig"
 source "board/autorock/wisehmi/Kconfig"
+source "board/autorock/smarthmi/Kconfig"
 
 source "arch/arm/Kconfig.debug"
 

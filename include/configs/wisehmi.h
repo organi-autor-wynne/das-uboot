@@ -58,7 +58,9 @@
 
 #undef CONFIG_MFG_NAND_PARTITION
 #ifdef CONFIG_SYS_BOOT_NAND
-#define CONFIG_MFG_NAND_PARTITION "mtdparts=8000000.nor:1m(boot),-(rootfs)\\\\;gpmi-nand:64m(boot),16m(kernel),16m(dtb),-(rootfs) "
+/*#define CONFIG_MFG_NAND_PARTITION "mtdparts=8000000.nor:1m(boot),-(rootfs)\\\\;gpmi-nand:64m(boot),16m(kernel),16m(dtb),-(rootfs) "*/
+/*#define CONFIG_MFG_NAND_PARTITION "mtdparts=8000000.nor:1m(boot),-(rootfs)\\\\;gpmi-nand:128k(spl),768k(uboot),384k(env),384k(dtb),7680k(kernel),-(rootfs) "*/
+#define CONFIG_MFG_NAND_PARTITION "mtdparts=gpmi-nand:64m(spl),1m(uboot),512k(env),512k(dtb),6m(kernel),58m(initramfs),-(rootfs)"
 #else
 #define CONFIG_MFG_NAND_PARTITION ""
 #endif
