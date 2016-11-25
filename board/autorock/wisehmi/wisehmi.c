@@ -1093,3 +1093,18 @@ void board_recovery_setup(void)
 #endif /*CONFIG_ANDROID_RECOVERY*/
 
 #endif /*CONFIG_FSL_FASTBOOT*/
+
+int spl_start_uboot(void)
+{
+	int ret;
+	// start uboot when console has input
+	mdelay(1);
+	ret = tstc();
+#ifdef CONFIG_SPL_SMP_BOOT
+	void imx_boot_secondary(void);
+	// cpu number = get_nr_cpus() + 1
+	if (!ret && get_nr_cpus() > 0)
+		imx_boot_secondary();
+#endif
+	return ret;
+}

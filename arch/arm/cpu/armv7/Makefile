@@ -58,3 +58,4 @@ obj-$(CONFIG_ARCH_SUNXI) += sunxi/
 obj-$(CONFIG_U8500) += u8500/
 obj-$(CONFIG_VF610) += vf610/
 obj-$(CONFIG_ZYNQ) += zynq/
+obj-$(CONFIG_SPL_SMP_BOOT) += smp/

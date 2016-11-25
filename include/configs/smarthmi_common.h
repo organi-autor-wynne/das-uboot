@@ -15,9 +15,6 @@
 #define CONFIG_MX6DL
 #endif
 
-#define CONFIG_SPL_PACKIMG
-#define CONFIG_PACKIMG
-
 /* uncomment for PLUGIN mode support */
 /* #define CONFIG_USE_PLUGIN */
 
@@ -60,10 +57,11 @@
 #define CONFIG_MXC_OCOTP
 #endif
 
+#ifdef CONFIG_BOOT_MMC
 /* MMC Configs */
 #define CONFIG_FSL_ESDHC
 #define CONFIG_FSL_USDHC
-#define CONFIG_SYS_FSL_ESDHC_ADDR      0
+#define CONFIG_SYS_FSL_ESDHC_ADDR      USDHC2_BASE_ADDR
 
 #define CONFIG_MMC
 #define CONFIG_CMD_MMC
@@ -76,6 +74,7 @@
 #define CONFIG_DOS_PARTITION
 
 #define CONFIG_SUPPORT_EMMC_BOOT /* eMMC specific */
+#endif
 
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_DHCP
@@ -104,24 +103,60 @@
 #define CONFIG_CMD_SETEXPR
 #undef CONFIG_CMD_IMLS
 
-#define CONFIG_BOOTDELAY              0// 1	/*modify by wynne at 20161026*/
+#define CONFIG_BOOTDELAY               1
 
 #define CONFIG_LOADADDR                        0x12000000
 #define CONFIG_SYS_TEXT_BASE           0x17800000
 #define CONFIG_SYS_MMC_IMG_LOAD_PART	1
 
-#define CONFIG_SYS_SPL_ARGS_ADDR        CONFIG_SYS_SDRAM_BASE + 0x2000000
-/*#define CONFIG_SPL_LOAD_SPLASH*/
-#define CONFIG_SYS_SPL_SPLASH_ADDR      CONFIG_SYS_SDRAM_BASE + 0x3000000
-#define CONFIG_SYS_SPL_INITRD_ADDR      (CONFIG_SYS_SDRAM_BASE + 0x3800000)
-#define CONFIG_SPL_RANGE_BEGIN      0x17780000
-#define CONFIG_SPL_RANGE_END        0x17800000
-#define CONFIG_SPL_SMP_STACK        0x177c0000
+#ifdef CONFIG_BOOT_MMC
+
+#define CONFIG_SUPPORT_EMMC_BOOT /* eMMC specific */
+
+/*
+	MMC/SD data layout
+	1k:		SPL			63k
+	64k:		u-boot.img		512k
+	576k:	env				448k
+	1M:		pack(dtb,zImage)	5M
+	6M:		initramfs.cpio.img	58M
+	64M		partition2(rootfs)
+*/
+#define CONFIG_SYS_MMCSD_RAW_MODE_SPL_SECTOR	2 /* offset 1KB */
+#define CONFIG_SYS_SPL_MAX_SIZE_SECTOR		126 /* 63KB */
+#define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	(CONFIG_SYS_MMCSD_RAW_MODE_SPL_SECTOR+CONFIG_SYS_SPL_MAX_SIZE_SECTOR) /* offset 64KB */
+#define CONFIG_SYS_U_BOOT_MAX_SIZE_SECTORS	1024 /* 512 KB */
+#define CONFIG_SYS_MMC_SD_FAT_BOOT_PARTITION	1
+
+#define CONFIG_ENV_IS_IN_MMC
+#define CONFIG_SYS_MMC_ENV_DEV	0
+#define CONFIG_ENV_OFFSET       ((CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR+CONFIG_SYS_U_BOOT_MAX_SIZE_SECTORS)*512)
+
+#ifdef CONFIG_AES_PACKIMG
+#define CMD_FLASH_KERNEL	"fl_kernel=run round_mmcblk && setexpr len ${nblock} * 0x200 && encrypt ${loadaddr} ${len} && mmc write ${loadaddr} 0x800 ${nblock}\0"
+#else
+#define CMD_FLASH_KERNEL	"fl_kernel=run round_mmcblk && mmc write ${loadaddr} 0x800 ${nblock}\0"
+#endif
+
+#define CONFIG_FL_DEFAULT_ENV \
+	"image=pImage\0" \
+	"round_mmcblk=setexpr nblock ${filesize} + 0x1ff && setexpr nblock ${nblock} / 0x200\0" \
+	"fl_spl=run round_mmcblk && mmc write ${loadaddr} 2 ${nblock}\0" \
+	"fl_uboot=run round_mmcblk && mmc write ${loadaddr} 0x80 ${nblock}\0" \
+	CMD_FLASH_KERNEL \
+	"fl_initroot=run round_mmcblk && mmc write ${loadaddr} 0x3000 ${nblock}\0" \
+	\
+	"tf_spl=tftp ${loadaddr} SPL && run fl_spl\0" \
+
+#ifdef CONFIG_SPL_BUILD
+#define CONFIG_SPL_MMC_SUPPORT
+/*#define CONFIG_SPL_FAT_SUPPORT*/
+#endif
+#endif
 
 #ifdef CONFIG_SYS_BOOT_NAND
 /*#define CONFIG_MFG_NAND_PARTITION "mtdparts=gpmi-nand:64m(boot),16m(kernel),16m(dtb),-(rootfs) "*/
-/*#define CONFIG_MFG_NAND_PARTITION "mtdparts=gpmi-nand:128k(spl),768k(uboot),384k(env),384k(dtb),7680k(kernel),-(rootfs)"*/
-#define CONFIG_MFG_NAND_PARTITION "mtdparts=gpmi-nand:64m(spl),1m(uboot),512k(env),512k(dtb),6m(kernel),58m(initramfs),-(rootfs)"
+#define CONFIG_MFG_NAND_PARTITION "mtdparts=gpmi-nand:128k(spl),768k(uboot),384k(env),384k(dtb),7680k(kernel),-(rootfs)"
 #else
 #define CONFIG_MFG_NAND_PARTITION ""
 #endif
@@ -160,9 +195,6 @@
 #define EMMC_ENV ""
 #endif
 
-#define CONFIG_FDT_ADDR_SETTINGS		"fdt_addr=0x18000000\0"
-#define CONFIG_INITRAMFS_ADDR			0x4800000
-
 #if defined(CONFIG_SYS_BOOT_NAND)
 	/*
 	 * The dts also enables the WEIN NOR which is mtd0.
@@ -182,18 +214,6 @@
 	6M:		initramfs.cpio.img	58M
 	64M		partition2(rootfs)
 	*/
-	/*
-	NAND data layout
-	0k:		SPL			64M
-	64M:	u-boot.img		1M
-	65M:	env				0.5M
-	65.5M:	dtb				0.5M
-	66M:	kernel			6M
-	72M:	initramfs.cpio.img	58M
-	130M	partition2(rootfs)
-	*/
-
-/*modify by wynne at 20161028*/
 #if 0
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS \
@@ -206,30 +226,17 @@
 		"nand read ${fdt_addr} 0x5000000 0x100000;"\
 		"bootz ${loadaddr} - ${fdt_addr}\0"
 #else
-#if 1
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS \
-	CONFIG_FDT_ADDR_SETTINGS \
+	"fdt_addr=0x18000000\0" \
 	"fdt_high=0xffffffff\0"	  \
-	"bootargs=console=" CONFIG_CONSOLE_DEV ",115200 ubi.mtd=6 initcall_debug printk_time=1 " \
-		"root=ubi0:rootfs rootfstype=ubifs fm_autoconvert=1 "		     \
-		"mtdparts=gpmi-nand:64m(spl),1m(uboot),512k(env),512k(dtb),6m(kernel),58m(initramfs),-(rootfs)\0"\
-	"bootcmd=nand read ${loadaddr} 0x4200000 0x500000;"\
-		"nand read ${fdt_addr} 0x4180000 0x19000;"\
-		"bootz ${loadaddr} - ${fdt_addr}\0"
-#else
-#define CONFIG_EXTRA_ENV_SETTINGS \
-	CONFIG_MFG_ENV_SETTINGS \
-	CONFIG_FDT_ADDR_SETTINGS \
-	"fdt_high=0xffffffff\0"	  \
-	"bootargs=console=" CONFIG_CONSOLE_DEV ",115200 ubi.mtd=6 " "initroot=10:none,initramfs,/startup/run quiet " \
+	"bootargs=console=" CONFIG_CONSOLE_DEV ",115200 ubi.mtd=5 "  \
 		"root=ubi0:rootfs rootfstype=ubifs "		     \
-		"mtdparts=gpmi-nand:64m(spl),1m(uboot),512k(env),512k(dtb),6m(kernel),58m(initramfs),-(rootfs)\0"\
-	"bootcmd=nand read ${loadaddr} 0x4200000 0x500000;"\
-		"nand read ${fdt_addr} 0x4180000 0x19000;"\
-		"nandr_aes 0x4800000 0x20000;"\
+		"mtdparts=gpmi-nand:128k(spl),768k(uboot),384k(env),384k(dtb),7680k(kernel),-(rootfs)\0"\
+	"bootcmd=nand read ${loadaddr} 0x4000000 0x800000;"\
+		"nand read ${fdt_addr} 0x5000000 0x100000;"\
 		"bootz ${loadaddr} - ${fdt_addr}\0"
-#endif
+
 #endif
 
 #elif defined(CONFIG_SYS_BOOT_SATA)
@@ -445,14 +452,16 @@
 #define CONFIG_SYS_NAND_5_ADDR_CYCLE
 #define CONFIG_SYS_NAND_ONFI_DETECTION
 
+#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_NAND_SUPPORT)
 /* DMA stuff, needed for GPMI/MXS NAND support */
 #define CONFIG_APBH_DMA
 #define CONFIG_APBH_DMA_BURST
 #define CONFIG_APBH_DMA_BURST8
 #endif
+#endif
 
 #if defined(CONFIG_ENV_IS_IN_MMC)
-#define CONFIG_ENV_OFFSET		(8 * 64 * 1024)
+/*#define CONFIG_ENV_OFFSET		(8 * 64 * 1024)*/
 #elif defined(CONFIG_ENV_IS_IN_SPI_FLASH)
 #define CONFIG_ENV_OFFSET              (768 * 1024)
 #define CONFIG_ENV_SECT_SIZE           (64 * 1024)
@@ -488,7 +497,7 @@
 #define CONFIG_SYS_I2C_MXC
 #define CONFIG_SYS_I2C_SPEED		  100000
 
-#if 0	/*modify by wynne at 20161026*/
+#if 0	/*modify by wynne at 20161103*/
 /* Framebuffer */
 #define CONFIG_VIDEO
 #define CONFIG_VIDEO_IPUV3
@@ -510,6 +519,51 @@
 #define CONFIG_IMX_HDMI
 #define CONFIG_IMX_VIDEO_SKIP
 #endif
+
+/* SPL */
+#ifdef CONFIG_SPL
+
+#include "imx6_spl.h"
+/*#define CONFIG_SPL_GPIO_SUPPORT*/
+
+#define CONFIG_SYS_SPL_ARGS_ADDR        CONFIG_SYS_SDRAM_BASE + 0x2000000
+
+/*#define CONFIG_SPL_LOAD_SPLASH*/
+#define CONFIG_SYS_SPL_SPLASH_ADDR      CONFIG_SYS_SDRAM_BASE + 0x3000000
+
+#define CONFIG_SYS_SPL_INITRD_ADDR      (CONFIG_SYS_SDRAM_BASE + 0x3800000)
+
+#define CONFIG_SPL_OS_BOOT
+/*#define CONFIG_SPL_BOARD_INIT*/
+
+#if defined(CONFIG_SPL_MMC_SUPPORT)
+#if defined(CONFIG_SPL_PACKIMG)
+#define CONFIG_SYS_MMCSD_RAW_MODE_PACKIMG_SECTOR	((CONFIG_ENV_OFFSET+CONFIG_ENV_SIZE)/512)  /* offset 1M */
+#ifdef CONFIG_DEFAULT_INITRD_FILE
+#define CONFIG_SYS_MMCSD_RAW_MODE_INITRD_SECTOR		(CONFIG_SYS_MMCSD_RAW_MODE_PACKIMG_SECTOR+SZ_1M*5/512)/* offset 6M */
+#endif
+#else
+#define CONFIG_SYS_MMCSD_RAW_MODE_KERNEL_SECTOR	4096  /* offset 2M */
+#define CONFIG_SYS_MMCSD_RAW_MODE_ARGS_SECTOR	2048  /* offset 1M */
+#define CONFIG_SYS_MMCSD_RAW_MODE_ARGS_SECTORS	(CONFIG_FDT_FILE_SIZE/512)
+#endif
+#endif
+
+#if defined(CONFIG_SPL_FAT_SUPPORT) || defined(CONFIG_SPL_EXT_SUPPORT)
+#define CONFIG_SPL_FAT_LOAD_KERNEL_NAME CONFIG_DEFAULT_KERNEL_FILE
+#define CONFIG_SPL_FAT_LOAD_ARGS_NAME   CONFIG_DEFAULT_FDT_FILE
+#define CONFIG_SPL_FAT_LOAD_SPLASH_NAME CONFIG_DEFAULT_SPLASH_FILE
+#define CONFIG_SPL_FAT_LOAD_INITRD_NAME CONFIG_DEFAULT_INITRD_FILE
+#endif
+
+#if defined(CONFIG_SPL_NAND_SUPPORT)
+#define CONFIG_CMD_SPL_NAND_OFS         (10 * 128 * 1024)
+#define CONFIG_CMD_SPL_WRITE_SIZE       CONFIG_FDT_FILE_SIZE
+#define CONFIG_SYS_NAND_SPL_KERNEL_OFFS (13 * 128 * 1024)
+#define CONFIG_SYS_NAND_U_BOOT_OFFS     (1 * 128 * 1024)
+#endif
+
+#endif /* CONFIG_SPL */
 
 #if defined(CONFIG_ANDROID_SUPPORT)
 #include "mx6sabreandroid_common.h"
