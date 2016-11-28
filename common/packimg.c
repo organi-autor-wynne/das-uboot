@@ -125,7 +125,7 @@ int mmc_load_packimg_header(struct mmc *mmc, uint32_t offs_sector)
 
 	// check valid header
 	if (ph->magic != PACK_MAGIC) {
-		printf("mmc load packimg from sector 0x%x fail\n", offs_sector);
+		printf("mmc load packimg from sector 0x%x ,%x fail\n", offs_sector,ph->magic);
 		return -1;
 	}
 
@@ -360,7 +360,7 @@ out:
 }
 #endif //#if defined(CONFIG_SPL_NAND_SUPPORT)
 
-#if 1
+#ifdef CONFIG_CMD_NAND
 int nand_packimg_read_ext( uint32_t nand_off, uint32_t nand_size)
 {	
 	nand_info_t *nand;

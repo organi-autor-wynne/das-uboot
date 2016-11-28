@@ -15,6 +15,9 @@
 #define CONFIG_MX6DL
 #endif
 
+#define CONFIG_SPL_PACKIMG
+#define CONFIG_PACKIMG
+
 /* uncomment for PLUGIN mode support */
 /* #define CONFIG_USE_PLUGIN */
 
@@ -388,7 +391,7 @@
 /* FLASH and environment organization */
 #define CONFIG_SYS_NO_FLASH
 
-#define CONFIG_ENV_SIZE			(8 * 1024)
+#define CONFIG_ENV_SIZE			(448 * 1024)
 
 #ifndef CONFIG_SYS_NOSMP
 #define CONFIG_SYS_NOSMP
@@ -535,6 +538,10 @@
 
 #define CONFIG_SPL_OS_BOOT
 /*#define CONFIG_SPL_BOARD_INIT*/
+
+#define CONFIG_SPL_RANGE_BEGIN      0x17780000
+#define CONFIG_SPL_RANGE_END        0x17800000
+#define CONFIG_SPL_SMP_STACK        0x177c0000
 
 #if defined(CONFIG_SPL_MMC_SUPPORT)
 #if defined(CONFIG_SPL_PACKIMG)

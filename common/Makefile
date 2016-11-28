@@ -217,6 +217,7 @@ obj-$(CONFIG_PACKIMG) += packimg.o
 obj-$(CONFIG_AES_PACKIMG) += aes-packimg.o
 
 ifdef CONFIG_SPL_BUILD
+obj-$(CONFIG_OF_LIBFDT) += fdt_support.o
 obj-$(CONFIG_ENV_IS_IN_FLASH) += env_flash.o
 obj-$(CONFIG_SPL_YMODEM_SUPPORT) += xyzModem.o
 obj-$(CONFIG_SPL_NET_SUPPORT) += miiphyutil.o
