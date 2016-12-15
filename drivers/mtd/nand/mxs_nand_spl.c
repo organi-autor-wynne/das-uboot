@@ -1,3 +1,4 @@
+#if 1
 /*
  * Copyright (C) 2014 Gateworks Corporation
  * Author: Tim Harvey <tharvey@gateworks.com>
@@ -72,7 +73,7 @@ static int mxs_flash_ident(struct mtd_info *mtd)
 	for (i = 0; i < 8; i++)
 		id_data[i] = chip->read_byte(mtd);
 	if (id_data[0] != mfg_id || id_data[1] != dev_id) {
-		printf("second ID read did not match");
+		debug("second ID read did not match");
 		return -1;
 	}
 	debug("0x%02x:0x%02x ", mfg_id, dev_id);
@@ -82,7 +83,7 @@ static int mxs_flash_ident(struct mtd_info *mtd)
 	chip->cmdfunc(mtd, NAND_CMD_READID, 0x20, -1);
 	if (chip->read_byte(mtd) != 'O' || chip->read_byte(mtd) != 'N' ||
 	    chip->read_byte(mtd) != 'F' || chip->read_byte(mtd) != 'I') {
-		return -2;
+		//return -2;
 	}
 
 	/* we have ONFI, probe it */
@@ -100,11 +101,24 @@ static int mxs_flash_ident(struct mtd_info *mtd)
 	/* Convert chipsize to number of pages per chip -1 */
 	chip->pagemask = (chip->chipsize >> chip->page_shift) - 1;
 	chip->badblockbits = 8;
-
+	if (p->ecc_bits != 0xff) {
+		chip->ecc_strength_ds = p->ecc_bits;
+		chip->ecc_step_ds = 512;
+	}
+	/* All legacy ID NAND are small-page, SLC */
+	chip->bits_per_cell = p->bits_per_cell;
+	
+	/* Set the bad block position */
+	if (mtd->writesize > 512 || (chip->options & NAND_BUSWIDTH_16))
+		chip->badblockpos = NAND_LARGE_BADBLOCK_POS;
+	else
+		chip->badblockpos = NAND_SMALL_BADBLOCK_POS;
+	
 	debug("erasesize=%d (>>%d)\n", mtd->erasesize, chip->phys_erase_shift);
 	debug("writesize=%d (>>%d)\n", mtd->writesize, chip->page_shift);
 	debug("oobsize=%d\n", mtd->oobsize);
 	debug("chipsize=%lld\n", chip->chipsize);
+	debug("ecc_bits=%d\n", p->ecc_bits);
 
 	return 0;
 }
@@ -120,6 +134,7 @@ static int mxs_read_page_ecc(struct mtd_info *mtd, void *buf, unsigned int page)
 		printf("read_page failed %d\n", ret);
 		return -1;
 	}
+
 	return 0;
 }
 
@@ -228,4 +243,26 @@ void nand_init(void)
 void nand_deselect(void)
 {
 }
+#else
+#include <common.h>
+#include <nand.h>
+/*#include <fdt_support.h>
+#include <asm/smp.h>
+*/
 
+int nand_spl_load_image(uint32_t offs, unsigned int size, void *buf)
+{
+	int err = 0;
+	nand_info_t *nand;
+	int dev = nand_curr_device;
+	nand = &nand_info[dev];
+	
+	err = nand_read_skip_bad(nand, offs, &size, NULL, nand->size, (void *)buf);
+
+	return err;
+}
+
+void nand_deselect(void)
+{
+}
+#endif

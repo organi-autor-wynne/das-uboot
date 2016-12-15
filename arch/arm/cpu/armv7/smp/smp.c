@@ -11,6 +11,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define BP_SRC_SCR_CORE1_ENABLE		22
 
 void smp_entry(void);
+int nand_packimg_read_ext( uint32_t nand_off, uint32_t nand_size);
 
 uint32_t imx_get_boot_arg(void)
 {
@@ -83,10 +84,11 @@ static inline void arch_hlt(void)
 void smp_init(void)
 {
 	int err;
+#ifdef CONFIG_BOOT_MMC
 	struct mmc *mmc;
 	struct pack_header *ph;
 	struct pack_entry *pe;
-
+#endif
 	puts("smp init\n");
 	imx_set_boot_arg(SMP_BOOT_DONE_SIGNATURE);
 	while (1) {

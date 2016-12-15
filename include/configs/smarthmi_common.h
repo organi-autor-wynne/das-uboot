@@ -79,6 +79,7 @@
 #define CONFIG_SUPPORT_EMMC_BOOT /* eMMC specific */
 #endif
 
+#ifdef CONFIG_NET_SUPPORT
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_MII
@@ -92,6 +93,7 @@
 
 #define CONFIG_PHYLIB
 #define CONFIG_PHY_ATHEROS
+#endif
 
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
@@ -106,7 +108,7 @@
 #define CONFIG_CMD_SETEXPR
 #undef CONFIG_CMD_IMLS
 
-#define CONFIG_BOOTDELAY               1
+#define CONFIG_BOOTDELAY               0// 1	/*modify by wynne at 20161129*/
 
 #define CONFIG_LOADADDR                        0x12000000
 #define CONFIG_SYS_TEXT_BASE           0x17800000
@@ -198,6 +200,9 @@
 #define EMMC_ENV ""
 #endif
 
+#define CONFIG_FDT_ADDR_SETTINGS		"fdt_addr=0x18000000\0"
+#define CONFIG_INITRAMFS_ADDR			0x4800000
+
 #if defined(CONFIG_SYS_BOOT_NAND)
 	/*
 	 * The dts also enables the WEIN NOR which is mtd0.
@@ -217,6 +222,18 @@
 	6M:		initramfs.cpio.img	58M
 	64M		partition2(rootfs)
 	*/
+	/*
+	NAND data layout
+	0k:		SPL			64M
+	64M:	u-boot.img		1M
+	65M:	env				0.5M
+	65.5M:	dtb				0.5M
+	66M:	kernel			6M
+	72M:	initramfs.cpio.img	58M
+	130M	partition2(rootfs)
+	*/
+
+/*modify by wynne at 20161028*/
 #if 0
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS \
@@ -229,17 +246,30 @@
 		"nand read ${fdt_addr} 0x5000000 0x100000;"\
 		"bootz ${loadaddr} - ${fdt_addr}\0"
 #else
+#if 0
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS \
-	"fdt_addr=0x18000000\0" \
+	CONFIG_FDT_ADDR_SETTINGS \
 	"fdt_high=0xffffffff\0"	  \
-	"bootargs=console=" CONFIG_CONSOLE_DEV ",115200 ubi.mtd=5 "  \
-		"root=ubi0:rootfs rootfstype=ubifs "		     \
-		"mtdparts=gpmi-nand:128k(spl),768k(uboot),384k(env),384k(dtb),7680k(kernel),-(rootfs)\0"\
-	"bootcmd=nand read ${loadaddr} 0x4000000 0x800000;"\
-		"nand read ${fdt_addr} 0x5000000 0x100000;"\
+	"bootargs=console=" CONFIG_CONSOLE_DEV ",115200 ubi.mtd=6 initcall_debug printk_time=1 " \
+		"root=ubi0:rootfs rootfstype=ubifs fm_autoconvert=1 "		     \
+		"mtdparts=gpmi-nand:64m(spl),1m(uboot),512k(env),512k(dtb),6m(kernel),58m(initramfs),-(rootfs)\0"\
+	"bootcmd=nand read ${loadaddr} 0x4200000 0x500000;"\
+		"nand read ${fdt_addr} 0x4180000 0x19000;"\
 		"bootz ${loadaddr} - ${fdt_addr}\0"
-
+#else
+#define CONFIG_EXTRA_ENV_SETTINGS \
+	CONFIG_MFG_ENV_SETTINGS \
+	CONFIG_FDT_ADDR_SETTINGS \
+	"fdt_high=0xffffffff\0"	  \
+	"bootargs=console=" CONFIG_CONSOLE_DEV ",115200 ubi.mtd=6 " "initroot=10:none,initramfs,/startup/run quiet " \
+		"root=ubi0:rootfs rootfstype=ubifs fm_autoconvert=1 "		     \
+		"mtdparts=gpmi-nand:64m(spl),1m(uboot),512k(env),512k(dtb),6m(kernel),58m(initramfs),-(rootfs)\0"\
+	"bootcmd=nand read ${loadaddr} 0x4200000 0x500000;"\
+		"nand read ${fdt_addr} 0x4180000 0x19000;"\
+		"nandr_img 0x4800000 0x20000;"\
+		"bootz ${loadaddr} - ${fdt_addr}\0"
+#endif
 #endif
 
 #elif defined(CONFIG_SYS_BOOT_SATA)
@@ -523,6 +553,10 @@
 #define CONFIG_IMX_VIDEO_SKIP
 #endif
 
+#define CONFIG_SPL_RANGE_BEGIN      0x17780000
+#define CONFIG_SPL_RANGE_END        0x17800000
+#define CONFIG_SPL_SMP_STACK        0x177c0000
+
 /* SPL */
 #ifdef CONFIG_SPL
 
@@ -537,11 +571,7 @@
 #define CONFIG_SYS_SPL_INITRD_ADDR      (CONFIG_SYS_SDRAM_BASE + 0x3800000)
 
 #define CONFIG_SPL_OS_BOOT
-/*#define CONFIG_SPL_BOARD_INIT*/
-
-#define CONFIG_SPL_RANGE_BEGIN      0x17780000
-#define CONFIG_SPL_RANGE_END        0x17800000
-#define CONFIG_SPL_SMP_STACK        0x177c0000
+#define CONFIG_SPL_BOARD_INIT
 
 #if defined(CONFIG_SPL_MMC_SUPPORT)
 #if defined(CONFIG_SPL_PACKIMG)
@@ -564,10 +594,10 @@
 #endif
 
 #if defined(CONFIG_SPL_NAND_SUPPORT)
-#define CONFIG_CMD_SPL_NAND_OFS         (10 * 128 * 1024)
-#define CONFIG_CMD_SPL_WRITE_SIZE       CONFIG_FDT_FILE_SIZE
-#define CONFIG_SYS_NAND_SPL_KERNEL_OFFS (13 * 128 * 1024)
-#define CONFIG_SYS_NAND_U_BOOT_OFFS     (1 * 128 * 1024)
+#define CONFIG_CMD_SPL_NAND_DTB_OFS         (67072 * 1024)
+#define CONFIG_CMD_SPL_DTB_WRITE_SIZE       CONFIG_FDT_FILE_SIZE
+#define CONFIG_SYS_NAND_SPL_KERNEL_OFFS (66 * 1024 * 1024)
+#define CONFIG_SYS_NAND_U_BOOT_OFFS     (64 * 1024 * 1024)
 #endif
 
 #endif /* CONFIG_SPL */

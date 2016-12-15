@@ -143,3 +143,6 @@ __attribute__((noreturn)) void nand_boot(void);
 int get_nand_env_oob(nand_info_t *nand, unsigned long *result);
 #endif
 int spl_nand_erase_one(int block, int page);
+#ifdef CONFIG_NAND_MXS
+void setup_gpmi_nand(void);
+#endif

@@ -227,7 +227,7 @@
 		"mtdparts=gpmi-nand:64m(spl),1m(uboot),512k(env),512k(dtb),6m(kernel),58m(initramfs),-(rootfs)\0"\
 	"bootcmd=nand read ${loadaddr} 0x4200000 0x500000;"\
 		"nand read ${fdt_addr} 0x4180000 0x19000;"\
-		"nandr_aes 0x4800000 0x20000;"\
+		"nandr_img 0x4800000 0x20000;"\
 		"bootz ${loadaddr} - ${fdt_addr}\0"
 #endif
 #endif

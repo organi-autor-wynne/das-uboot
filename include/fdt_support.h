@@ -174,6 +174,7 @@ int arch_fixup_memory_node(void *blob);
 
 int fdt_setup_simplefb_node(void *fdt, int node, u64 base_address, u32 width,
 			    u32 height, u32 stride, const char *format);
+int fdt_set_chosen(void *fdt, char *bootargs, ulong *spl_start, ulong *spl_end);
 
 #endif /* ifdef CONFIG_OF_LIBFDT */
 

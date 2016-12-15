@@ -361,6 +361,9 @@ out:
 #endif //#if defined(CONFIG_SPL_NAND_SUPPORT)
 
 #ifdef CONFIG_CMD_NAND
+u32 get_nr_cpus(void);
+int spl_start_uboot(void);
+
 int nand_packimg_read_ext( uint32_t nand_off, uint32_t nand_size)
 {	
 	nand_info_t *nand;
@@ -370,10 +373,10 @@ int nand_packimg_read_ext( uint32_t nand_off, uint32_t nand_size)
 	return nand_packimg_read(nand, nand_off, nand_size);
 }
 
-static int do_nandr_aes(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+static int do_nandr_img(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	uint32_t src_addr, len;
-	uint8_t *src_ptr;
+	//uint8_t *src_ptr;
 
 	nand_info_t *nand;
 	int dev = nand_curr_device;
@@ -384,13 +387,13 @@ static int do_nandr_aes(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[]
 	src_addr = simple_strtoul(argv[1], NULL, 16);
 	len = simple_strtoul(argv[2], NULL, 16);
 
-	src_ptr = (uint8_t *)src_addr;
+	//src_ptr = (uint8_t *)src_addr;
 
 	/* First we expand the key. */
 	//init_aes();
-
+#ifdef CONFIG_SPL_BUILD
 	spl_start_uboot();
-	
+#endif	
 	nand = &nand_info[dev];
 	if(get_nr_cpus() <= 0)
 		nand_packimg_read(nand, src_addr, len);
@@ -400,7 +403,7 @@ static int do_nandr_aes(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[]
 
 /***************************************************/
 U_BOOT_CMD(
-	nandr_aes, 3, 1, do_nandr_aes,
+	nandr_img, 3, 1, do_nandr_img,
 	"read data form NandFlash with aes",
 	"nandr_aes src len - read block of data $len bytes long at address $src form nandflash with aes\n"
 );

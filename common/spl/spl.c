@@ -259,7 +259,7 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 		break;
 #ifdef CONFIG_SPL_OS_BOOT
 	case IH_OS_LINUX:
-		debug("Jumping to Linux\n");
+		debug("Jumping to Linux, load_addr:0x%x	entry_point:0x%x	size:0x%x\n",spl_image.load_addr, spl_image.entry_point, spl_image.size);
 		spl_board_prepare_for_linux();
 		jump_to_image_linux((void *)CONFIG_SYS_SPL_ARGS_ADDR);
 #endif

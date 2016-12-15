@@ -78,7 +78,11 @@ DECLARE_GLOBAL_DATA_PTR;
 #define OTG_ID_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE |		\
 	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
 	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
-
+	
+#define GPMI_PAD_CTRL0 (PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_100K_UP)
+#define GPMI_PAD_CTRL1 (PAD_CTL_DSE_40ohm | PAD_CTL_SPEED_MED | \
+			PAD_CTL_SRE_FAST)
+#define GPMI_PAD_CTRL2 (GPMI_PAD_CTRL0 | GPMI_PAD_CTRL1)
 
 #define I2C_PMIC	1
 
@@ -119,6 +123,7 @@ static iomux_v3_cfg_t const enet_pads[] = {
 	MX6_PAD_ENET_CRS_DV__GPIO1_IO25		| MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
+#ifdef CONFIG_NET_SUPPORT
 static void setup_iomux_enet(void)
 {
 	imx_iomux_v3_setup_multiple_pads(enet_pads, ARRAY_SIZE(enet_pads));
@@ -128,6 +133,7 @@ static void setup_iomux_enet(void)
 	udelay(500);
 	gpio_set_value(IMX_GPIO_NR(1, 25), 1);
 }
+#endif
 
 static iomux_v3_cfg_t const usdhc2_pads[] = {
 	MX6_PAD_SD2_CLK__SD2_CLK	| MUX_PAD_CTRL(USDHC_PAD_CTRL),
@@ -222,11 +228,13 @@ static iomux_v3_cfg_t const rgb_pads[] = {
 	MX6_PAD_SD1_DAT3__GPIO1_IO21 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
+#if defined(CONFIG_VIDEO_IPUV3)
 static void enable_rgb(struct display_info_t const *dev)
 {
 	imx_iomux_v3_setup_multiple_pads(rgb_pads, ARRAY_SIZE(rgb_pads));
 	gpio_direction_output(DISP0_PWR_EN, 1);
 }
+#endif
 
 static struct i2c_pads_info i2c_pad_info1 = {
 	.scl = {
@@ -241,6 +249,7 @@ static struct i2c_pads_info i2c_pad_info1 = {
 	}
 };
 
+#ifdef CONFIG_NET_SUPPORT
 iomux_v3_cfg_t const pcie_pads[] = {
 	MX6_PAD_EIM_D19__GPIO3_IO19 | MUX_PAD_CTRL(NO_PAD_CTRL),	/* POWER */
 	MX6_PAD_GPIO_17__GPIO7_IO12 | MUX_PAD_CTRL(NO_PAD_CTRL),	/* RESET */
@@ -250,6 +259,7 @@ static void setup_pcie(void)
 {
 	imx_iomux_v3_setup_multiple_pads(pcie_pads, ARRAY_SIZE(pcie_pads));
 }
+#endif
 
 iomux_v3_cfg_t const di0_pads[] = {
 	MX6_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK,	/* DISP0_CLK */
@@ -309,6 +319,42 @@ static void setup_iomux_uart(void)
 {
 	imx_iomux_v3_setup_multiple_pads(uart4_pads, ARRAY_SIZE(uart4_pads));
 }
+
+#ifdef CONFIG_NAND_MXS
+static iomux_v3_cfg_t gpmi_pads[] = {
+	MX6_PAD_NANDF_CLE__NAND_CLE		| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+	MX6_PAD_NANDF_ALE__NAND_ALE		| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+	MX6_PAD_NANDF_WP_B__NAND_WP_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+	MX6_PAD_NANDF_RB0__NAND_READY_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL0),
+	MX6_PAD_NANDF_CS0__NAND_CE0_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+	MX6_PAD_SD4_CMD__NAND_RE_B		| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+	MX6_PAD_SD4_CLK__NAND_WE_B		| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+	MX6_PAD_NANDF_D0__NAND_DATA00	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+	MX6_PAD_NANDF_D1__NAND_DATA01	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+	MX6_PAD_NANDF_D2__NAND_DATA02	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+	MX6_PAD_NANDF_D3__NAND_DATA03	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+	MX6_PAD_NANDF_D4__NAND_DATA04	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+	MX6_PAD_NANDF_D5__NAND_DATA05	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+	MX6_PAD_NANDF_D6__NAND_DATA06	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+	MX6_PAD_NANDF_D7__NAND_DATA07	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
+	MX6_PAD_SD4_DAT0__NAND_DQS		| MUX_PAD_CTRL(GPMI_PAD_CTRL1),
+};
+
+void setup_gpmi_nand(void)
+{
+	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
+
+	/* config gpmi nand iomux */
+	imx_iomux_v3_setup_multiple_pads(gpmi_pads, ARRAY_SIZE(gpmi_pads));
+
+	setup_gpmi_io_clk((MXC_CCM_CS2CDR_ENFC_CLK_PODF(0) |
+			MXC_CCM_CS2CDR_ENFC_CLK_PRED(3) |
+			MXC_CCM_CS2CDR_ENFC_CLK_SEL(3)));
+
+	/* enable apbh clock gating */
+	setbits_le32(&mxc_ccm->CCGR0, MXC_CCM_CCGR0_APBHDMA_MASK);
+}
+#endif
 
 #ifdef CONFIG_FSL_ESDHC
 struct fsl_esdhc_cfg usdhc_cfg[3] = {
@@ -463,7 +509,6 @@ int board_mmc_init(bd_t *bis)
 	return fsl_esdhc_initialize(bis, &usdhc_cfg[0]);
 #endif
 }
-#endif
 
 int check_mmc_autodetect(void)
 {
@@ -496,6 +541,7 @@ void board_late_mmc_env_init(void)
 	sprintf(cmd, "mmc dev %d", dev_no);
 	run_command(cmd, 0);
 }
+#endif
 
 #if defined(CONFIG_MX6DL) && defined(CONFIG_MXC_EPDC)
 vidinfo_t panel_info = {
@@ -873,6 +919,7 @@ int overwrite_console(void)
 	return 1;
 }
 
+#ifdef CONFIG_NET_SUPPORT
 int board_eth_init(bd_t *bis)
 {
 	if (is_mx6dqp()) {
@@ -890,6 +937,7 @@ int board_eth_init(bd_t *bis)
 
 	return cpu_eth_init(bis);
 }
+#endif
 
 #ifdef CONFIG_USB_EHCI_MX6
 #define USB_OTHERREGS_OFFSET	0x800
@@ -982,6 +1030,10 @@ int board_init(void)
 	setup_epdc();
 #endif
 
+#ifdef CONFIG_NAND_MXS
+	setup_gpmi_nand();
+#endif
+
 #ifdef CONFIG_CMD_SATA
 	setup_sata();
 #endif
@@ -989,12 +1041,12 @@ int board_init(void)
 	return 0;
 }
 
+#ifdef CONFIG_LDO_BYPASS_CHECK		/*modify by wynne at 20161129*/
 static struct pmic *pfuze;
 int power_init_board(void)
 {
 	unsigned int reg;
 	int ret;
-
 	pfuze = pfuze_common_init(I2C_PMIC);
 	if (!pfuze)
 		return -ENODEV;
@@ -1068,9 +1120,9 @@ int power_init_board(void)
 		reg |= 0x40;
 		pmic_reg_write(pfuze, PFUZE100_SW1CCONF, reg);
 	}
-
 	return 0;
 }
+#endif
 
 #ifdef CONFIG_LDO_BYPASS_CHECK
 void ldo_mode_set(int ldo_bypass)
@@ -1203,6 +1255,14 @@ int board_late_init(void)
 #ifdef CONFIG_ENV_IS_IN_MMC
 	board_late_mmc_env_init();
 #endif
+	struct mxc_ccm_reg *ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
+printf("""CCGR: %x, %x, %x, %x, %x, %x, %x \n", readl(&ccm->CCGR0), readl(&ccm->CCGR1)
+	,readl(&ccm->CCGR2)
+	,readl( &ccm->CCGR3)
+	,readl(&ccm->CCGR4)
+	,readl(&ccm->CCGR5)
+	,readl(&ccm->CCGR6));
+
 	return 0;
 }
 
@@ -1603,14 +1663,26 @@ const struct mx6_mmdc_calibration mx6_mmcd_calib = {
 static void ccgr_init(void)
 {
 	struct mxc_ccm_reg *ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
-
+#if 1
 	writel(0x00C03F3F, &ccm->CCGR0);
 	writel(0x0030FC03, &ccm->CCGR1);
 	writel(0x0FFFC000, &ccm->CCGR2);
 	writel(0x3FF00000, &ccm->CCGR3);
-	writel(0x00FFF300, &ccm->CCGR4);
+	//writel(0x00FFF300, &ccm->CCGR4);
+	writel(0xFFFFF300, &ccm->CCGR4);	/* enable NAND/GPMI/BCH clks */
 	writel(0x0F0000C3, &ccm->CCGR5);
 	writel(0x000003FF, &ccm->CCGR6);
+#else
+	writel(0x00C03F3F, &ccm->CCGR0);
+	writel(0x0030FC03, &ccm->CCGR1);
+	writel(0x0FFFF300, &ccm->CCGR2);
+	writel(0x3FF00000, &ccm->CCGR3);
+	//writel(0x00FFF300, &ccm->CCGR4);
+	writel(0xFFFFF300, &ccm->CCGR4);	/* enable NAND/GPMI/BCH clks */
+	writel(0x0F0000C3, &ccm->CCGR5);
+	writel(0x00000FFF, &ccm->CCGR6);
+
+#endif
 }
 
 static void gpr_init(void)
@@ -1733,6 +1805,18 @@ void board_init_f(ulong dummy)
 
 	/* load/boot image from boot device */
 	board_init_r(NULL, 0);
+}
+
+void spl_board_init(void)
+{
+	get_clocks();
+#ifdef CONFIG_MXC_SPI
+	setup_spi();
+#endif
+
+#ifdef CONFIG_SPL_NAND_SUPPORT
+	setup_gpmi_nand();
+#endif
 }
 
 void reset_cpu(ulong addr)
