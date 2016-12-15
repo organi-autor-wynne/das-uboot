@@ -147,7 +147,7 @@ int enable_cspi_clock(unsigned char enable, unsigned spi_num)
 }
 #endif
 
-#if 1//def CONFIG_MMC
+#ifdef CONFIG_MMC
 int enable_usdhc_clk(unsigned char enable, unsigned bus_num)
 {
 	u32 mask;

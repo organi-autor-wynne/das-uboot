@@ -1256,12 +1256,6 @@ int board_late_init(void)
 	board_late_mmc_env_init();
 #endif
 	struct mxc_ccm_reg *ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
-printf("""CCGR: %x, %x, %x, %x, %x, %x, %x \n", readl(&ccm->CCGR0), readl(&ccm->CCGR1)
-	,readl(&ccm->CCGR2)
-	,readl( &ccm->CCGR3)
-	,readl(&ccm->CCGR4)
-	,readl(&ccm->CCGR5)
-	,readl(&ccm->CCGR6));
 
 	return 0;
 }
