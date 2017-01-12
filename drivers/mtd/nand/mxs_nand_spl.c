@@ -181,8 +181,9 @@ static int mxs_nand_init(void)
 	/* setup flash layout (does not scan as we override that) */
 	mtd.size = nand_chip.chipsize;
 	nand_chip.scan_bbt(&mtd);
-
+	
 	printf("%llu MiB\n", (mtd.size / (1024 * 1024)));
+
 	return 0;
 }
 
@@ -256,7 +257,8 @@ int nand_spl_load_image(uint32_t offs, unsigned int size, void *buf)
 	nand_info_t *nand;
 	int dev = nand_curr_device;
 	nand = &nand_info[dev];
-	
+	size = roundup(size, nand->writesize);
+
 	err = nand_read_skip_bad(nand, offs, &size, NULL, nand->size, (void *)buf);
 
 	return err;

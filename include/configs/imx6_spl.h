@@ -75,6 +75,7 @@
 /*modify by wynne at 20161128*/
 #define CONFIG_SYS_SPL_MALLOC_SIZE	0x10000		/* 64 KB */
 #define CONFIG_SYS_TEXT_BASE		0x17800000
+#define CONFIG_SPL_SMP_STACK        0x177c0000
 #endif
 #endif
 

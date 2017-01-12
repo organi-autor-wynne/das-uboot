@@ -1255,14 +1255,13 @@ int board_late_init(void)
 #ifdef CONFIG_ENV_IS_IN_MMC
 	board_late_mmc_env_init();
 #endif
-	struct mxc_ccm_reg *ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
 
 	return 0;
 }
 
 int checkboard(void)
 {
-	puts("Board: MX6-SabreSD\n");
+	puts("Board: MX6-SmartHMI\n");
 	return 0;
 }
 
@@ -1791,8 +1790,12 @@ void board_init_f(ulong dummy)
 	/* UART clocks enabled and gd valid - init serial console */
 	preloader_console_init();
 
+	#ifdef CONFIG_MX6DL
 	/* DDR initialization */
-	spl_dram_init(32, 512);
+	spl_dram_init(32, CONFIG_DDR_MB);
+	#elif defined(CONFIG_MX6Q)
+	spl_dram_init(64, CONFIG_DDR_MB);
+	#endif
 
 	/* Clear the BSS. */
 	memset(__bss_start, 0, __bss_end - __bss_start);
