@@ -190,7 +190,7 @@ void spl_mmc_load_image(void)
 		mmc->bus_width = 1;
 		mmc->clock = 20000000;
 		err = mmc_init(mmc);
-		puts("1. mmc->bus_width = %d, mmc->clock = %d \n", mmc->bus_width, mmc->clock);
+		printf("1. mmc->bus_width = %d, mmc->clock = %d \n", mmc->bus_width, mmc->clock);
 		if (err) {
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
 			printf("spl: mmc init failed: err - %d\n", err);
@@ -224,7 +224,7 @@ void spl_mmc_load_image(void)
 	}
 
 	err = mmc_init(mmc);
-	puts("2. mmc->bus_width = %d, mmc->clock = %d \n", mmc->bus_width, mmc->clock);
+	printf("2. mmc->bus_width = %d, mmc->clock = %d \n", mmc->bus_width, mmc->clock);
 	if (err) {
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
 		printf("spl: mmc init failed: err - %d\n", err);
