@@ -274,10 +274,12 @@ void spl_board_init(void)
 #ifdef CONFIG_SPL_NAND_SUPPORT
 	setup_gpmi_nand();
 #endif
-printf("spl_board_init \n");
+#if 0
+	printf("spl_board_init \n");
 	
 	mxc_serial_encrypt_pin(0);
 	sha_204_main();
+	
 	//rand_main(slot15_key);
 	//tempkey_main(slot15_key);
 	//AuthEncryptChip(slot00_key);
@@ -298,6 +300,7 @@ printf("spl_board_init \n");
 	sha204_write(0x82, 0x0070, slot14_key);	
 	sha204_write(0x82, 0x0078, slot00_key);
 	sha204_lock(0x01)*/;
+#endif
 }
 
 int spl_start_uboot(void)
